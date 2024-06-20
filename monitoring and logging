@@ -1,0 +1,377 @@
+devops-monitoring-project/
+│
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml
+│
+├── app/
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── src/
+│   │   ├── main.py
+│   │   └── requirements.txt
+│   └── tests/
+│       └── test_main.py
+│
+├── monitoring/
+│   ├── prometheus.yml
+│   ├── grafana_dashboard.json
+│   └── Dockerfile
+│
+├── logging/
+│   ├── elasticsearch/
+│   │   └── Dockerfile
+│   ├── logstash/
+│   │   ├── Dockerfile
+│   │   └── logstash.conf
+│   ├── kibana/
+│   │   └── Dockerfile
+│   └── docker-compose.yml
+│
+├── scripts/
+   ├── setup.sh
+   └── deploy.sh
+# DevOps Monitoring and Logging Project
+
+This repository contains a DevOps project that sets up a complete monitoring and logging solution for a web application using Prometheus, Grafana, and the ELK (Elasticsearch, Logstash, Kibana) stack.
+
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [Monitoring](#monitoring)
+  - [Prometheus](#prometheus)
+  - [Grafana](#grafana)
+- [Logging](#logging)
+  - [Elasticsearch](#elasticsearch)
+  - [Logstash](#logstash)
+  - [Kibana](#kibana)
+- [CI/CD Pipeline](#ci-cd-pipeline)
+- [Getting Started](#getting-started)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Project Overview
+
+This project demonstrates the setup and integration of monitoring and logging tools to ensure the reliability and performance of a web application. The project includes:
+
+- A simple Python web application.
+- Monitoring with Prometheus and Grafana.
+- Logging with Elasticsearch, Logstash, and Kibana.
+- Automated CI/CD pipeline using GitHub Actions.
+
+## Monitoring
+
+### Prometheus
+
+Prometheus is used for monitoring and alerting. The configuration file `prometheus.yml` is located in the `monitoring/` directory.
+
+### Grafana
+
+Grafana is used for visualizing the metrics collected by Prometheus. The dashboard configuration is provided in `grafana_dashboard.json`.
+
+## Logging
+
+### Elasticsearch
+
+Elasticsearch is used for storing logs. The Dockerfile for Elasticsearch is located in the `logging/elasticsearch/` directory.
+
+### Logstash
+
+Logstash is used for processing and forwarding logs to Elasticsearch. The configuration file `logstash.conf` is located in the `logging/logstash/` directory.
+
+### Kibana
+
+Kibana is used for visualizing logs stored in Elasticsearch. The Dockerfile for Kibana is located in the `logging/kibana/` directory.
+
+## CI/CD Pipeline
+
+The CI/CD pipeline is configured using GitHub Actions. The workflow file is located in `.github/workflows/ci-cd.yml`. This pipeline includes:
+
+- Building the Docker images.
+- Running tests.
+- Deploying the application and the monitoring/logging stack.
+
+## Getting Started
+
+To get started with this project, follow these steps:
+
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/xxxxxxx
+   cd dsmp
+cd app
+docker-compose up --build
+cd monitoring
+docker-compose up -d
+cd logging
+docker-compose up -d
+
+### Application Code (`app/src/main.py`)
+
+```python
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello_world():
+    return jsonify(message="Hello, World!")
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+
+### Application testing (app/tests/test_main.py)
+
+import unittest
+from main import app
+
+class BasicTestCase(unittest.TestCase):
+    def test_home(self):
+        tester = app.test_client(self)
+        response = tester.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json['message'], "Hello, World!")
+
+if __name__ == '__main__':
+    unittest.main()
+Dockerfile for Application (app/Dockerfile)
+FROM python:3.8-slim
+
+WORKDIR /app
+
+COPY src/requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+
+COPY src/ .
+
+CMD ["python", "main.py"]
+Docker Compose for Application (app/docker-compose.yml)
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+Prometheus Configuration (monitoring/prometheus.yml)
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'web'
+    static_configs:
+      - targets: ['web:5000']
+Dockerfile for Prometheus (monitoring/Dockerfile)
+FROM prom/prometheus:v2.26.0
+
+COPY prometheus.yml /etc/prometheus/prometheus.yml
+Grafana Dashboard Configuration (monitoring/grafana_dashboard.json)
+{
+  "dashboard": {
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "id": null,
+    "links": [],
+    "panels": [],
+    "schemaVersion": 27,
+    "style": "dark",
+    "tags": [],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "time_options": [
+        "5m",
+        "15m",
+        "1h",
+        "6h",
+        "12h",
+        "24h",
+        "2d",
+        "7d",
+        "30d"
+      ]
+    },
+    "timezone": "",
+    "title": "New dashboard",
+    "uid": null,
+    "version": 0
+  }
+}
+Logstash Configuration (logging/logstash/logstash.conf)
+input {
+  file {
+    path => "/var/log/*.log"
+    start_position => "beginning"
+  }
+}
+
+filter {
+  grok {
+    match => { "message" => "%{COMMONAPACHELOG}" }
+  }
+  date {
+    match => [ "timestamp" , "dd/MMM/yyyy:HH:mm:ss Z" ]
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["elasticsearch:9200"]
+  }
+}
+
+Docker Compose for Logging Stack (logging/docker-compose.yml)
+yaml
+version: '3.8'
+
+services:
+  elasticsearch:
+    build: ./elasticsearch
+    ports:
+      - "9200:9200"
+    networks:
+      - logging-network
+
+  logstash:
+    build: ./logstash
+    ports:
+      - "5000:5000"
+    networks:
+      - logging-network
+
+  kibana:
+    build: ./kibana
+    ports:
+      - "5601:5601"
+    networks:
+      - logging-network
+
+networks:
+  logging-network:
+    driver: bridge
+
+CI/CD Pipeline Configuration (.github/workflows/ci-cd.yml)
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          cd app
+          pip install -r src/requirements.txt
+
+      - name: Run tests
+        run: |
+          cd app
+          pytest tests/
+
+      - name: Build Docker images
+        run: |
+          cd app
+          docker-compose build
+          cd ../monitoring
+          docker-compose build
+          cd ../logging
+          docker-compose build
+
+      - name: Deploy services
+        run: |
+          cd app
+          docker-compose up -d
+          cd ../monitoring
+          docker-compose up -d
+          cd ../logging
+          docker-compose up -d
+
+Setup Script (scripts/setup.sh)
+bash
+#!/bin/bash
+
+# Setup Docker Network
+docker network create devops-network
+
+# Setup and Run Application
+cd ../app
+docker-compose up --build -d
+
+# Setup and Run Monitoring Stack
+cd ../monitoring
+docker-compose up -d
+
+# Setup and Run Logging Stack
+cd ../logging
+docker-compose up -d
+
+Deploy Script (scripts/deploy.sh)
+#!/bin/bash
+
+# Deploy Application
+cd ../app
+docker-compose up -d
+
+# Deploy Monitoring Stack
+cd ../monitoring
+docker-compose up -d
+
+# Deploy Logging Stack
+cd ../logging
+docker-compose up -d
+
+
+
